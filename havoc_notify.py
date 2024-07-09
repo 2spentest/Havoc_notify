@@ -28,7 +28,7 @@ send_process_name = True
 send_process_id = True
 send_process_arch = True
 
-save_keys = False
+save_keys = True
 config_dir = os.path.join(os.path.expanduser("~"), ".config", "notification_service")
 notified_demons_file = os.path.join(config_dir, "notified_demons.txt")
 options_file = os.path.join(config_dir, "options_config.txt")
@@ -243,7 +243,7 @@ def open_options_gui():
     try:
         options_gui.clear()
         options_gui.addLabel("<h3 style='color:#bd93f9'>Options</h3>")
-        options_gui.addCheckbox("Save keys to file", toggle_save_keys, save_keys)
+        #options_gui.addCheckbox("Save keys to file", toggle_save_keys, save_keys)
         options_gui.addCheckbox("Send Listener", toggle_send_listener, send_listener)
         options_gui.addCheckbox("Send External IP", toggle_send_external_ip, send_external_ip)
         options_gui.addCheckbox("Send Internal IP", toggle_send_internal_ip, send_internal_ip)
