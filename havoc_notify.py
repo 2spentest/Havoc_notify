@@ -115,14 +115,19 @@ def threaded_send_notification(facts, pushover_message):
 # Function to send Pushover notification
 def send_pushover_notification(message):
     if not pushover_config['user_key'] or not pushover_config['api_token']:
+        print("Pushover keys not set, skipping notification")
         return
+
     payload = {
         'token': pushover_config['api_token'],
         'user': pushover_config['user_key'],
         'message': message
     }
-    response = requests.post('https://api.pushover.net/1/messages.json', data=payload)
 
+    try:
+        response = requests.post('https://api.pushover.net/1/messages.json', data=payload)
+    except requests.RequestException as e:
+        print(f"Error sending Pushover notification: {e}")
 
 
 # Function to send Teams notification
