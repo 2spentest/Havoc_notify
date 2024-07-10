@@ -90,10 +90,11 @@ def save_options():
 
 
 def load_notified_demons():
+    global notified_demons
     if os.path.exists(notified_demons_file):
         with open(notified_demons_file, "r") as file:
-            for line in file:
-                notified_demons.add(line.strip())
+            notified_demons = set(file.read().splitlines())
+    print(f"Loaded notified demons: {notified_demons}")
 
 def save_notified_demon(demonID):
     os.makedirs(config_dir, exist_ok=True)
@@ -105,6 +106,7 @@ def save_notified_demon(demonID):
 
     with open(notified_demons_file, "a") as file:
         file.write(f"{demonID}\n")
+    notified_demons.add(demonID)
 
 
 def threaded_send_notification(facts, pushover_message):
@@ -174,6 +176,9 @@ def send_teams_notification(facts):
 
 # Callback function for new daemon connections
 def alert_new_demon(demonID):
+
+    if demonID in notified_demons:
+        return
     try:
         demon = Demon(demonID)
         facts = []
@@ -217,6 +222,7 @@ def alert_new_demon(demonID):
             pushover_message += f"\nProcess Architecture: {demon.ProcessArch}"
 
         threaded_send_notification(facts, pushover_message)
+        save_notified_demon(demonID)
     except Exception as e:
         print(f"Exception occurred in alert_new_demon: {e}")
 
