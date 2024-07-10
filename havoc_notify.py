@@ -109,10 +109,17 @@ def save_notified_demon(demonID):
     notified_demons.add(demonID)
 
 
-def threaded_send_notification(facts, pushover_message):
-    threading.Thread(target=send_pushover_notification, args=(pushover_message,)).start()
-    threading.Thread(target=send_teams_notification, args=(facts,)).start()
-
+def send_notifications(facts, pushover_message):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(send_pushover_notification, pushover_message),
+            executor.submit(send_teams_notification, facts)
+        ]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"Error in notification thread: {e}")
 
 # Function to send Pushover notification
 def send_pushover_notification(message):
@@ -127,7 +134,8 @@ def send_pushover_notification(message):
     }
 
     try:
-        response = requests.post('https://api.pushover.net/1/messages.json', data=payload)
+        response = requests.post('https://api.pushover.net/1/messages.json', data=payload, timeout=3)
+        print(f"Pushover response: {response.status_code}, {response.text}")
     except requests.RequestException as e:
         print(f"Error sending Pushover notification: {e}")
 
@@ -172,11 +180,13 @@ def send_teams_notification(facts):
         ]
     }
 
-    response = requests.post(teams_config['webhook_url'], json=payload)
+
+    response = requests.post(teams_config['webhook_url'], json=payload, timeout=3)
+    print(f"Teams response: {response.status_code}, {response.text}")
+
 
 # Callback function for new daemon connections
 def alert_new_demon(demonID):
-
     if demonID in notified_demons:
         return
     try:
@@ -221,7 +231,7 @@ def alert_new_demon(demonID):
             facts.append({"title": "Process Architecture:", "value": demon.ProcessArch})
             pushover_message += f"\nProcess Architecture: {demon.ProcessArch}"
 
-        threaded_send_notification(facts, pushover_message)
+        send_notifications(facts, pushover_message)
         save_notified_demon(demonID)
     except Exception as e:
         print(f"Exception occurred in alert_new_demon: {e}")
